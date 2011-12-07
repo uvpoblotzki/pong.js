@@ -140,14 +140,13 @@ function Paddel(width, height, position, level) {
     this.level = level;
 
     this.tick = function(input) {
+        var dy = 30 + 10 * input.getRepeatsForKey();
         if (input.getKey() == input.UP) {
-            this.position.y += 100;
+            this.position.y += dy;
             if (this.position.y > this.level.height - this.height) this.position.y = this.level.height - this.height;
-            console.debug("Move paddle" + player + " up");
         } else if (input.getKey() == input.DOWN) {
-            this.position.y -= 100;
+            this.position.y -= dy;
             if (this.position.y < 0) this.position.y = 0;
-            console.debug("Move paddel " + player + " down");
         }
     }
 
@@ -166,7 +165,7 @@ function Level(width, height) {
     this.width = width;
     this.height = height;
 
-    this.ball = new Ball(10, new Vector(20, 20), new Vector(11, 13));
+    this.ball = new Ball(10, new Vector(80, this.height / 2), new Vector(11, 13));
     this.paddels = [new Paddel(20, 150, new Vector(50, this.height / 2 - 75), this),
                     new Paddel(20, 150, new Vector(this.width - 70, this.height / 2 - 75), this)];
     this.scores = [0, 0];
@@ -215,8 +214,14 @@ function Level(width, height) {
             this.ball.velocity.flipX();
             if ((isInside & Rect.EAST) != 0) {
                 this.scores[1] = this.scores[1] + 1;
+                this.ball.position = new Vector(this.paddels[0].position.x+this.paddels[0].width+this.ball.radius,
+                                                this.paddels[0].position.y+this.paddels[0].height/2);
+                this.ball.velocity.flipX();
             } else {
                 this.scores[0] = this.scores[0] + 1;
+                this.ball.position = new Vector(this.paddels[1].position.x-this.ball.radius,
+                                                this.paddels[1].position.y+this.paddels[1].height/2);
+                this.ball.velocity.flipX();
             }
         }
 
@@ -272,16 +277,19 @@ function Input() {
     this.DOWN = -1;
     this.NONE = 0;
 
+    this.previous_button = this.NONE;
     this.button = this.NONE;
     this.button_repeat = 0;
 
     this.update = function(key) {
-      if (this.button == key) {
+      this.button = key;
+      if (this.previous_button == key) {
         this.button_repeat += 1;              
       } else {
-        this.button_repeat = 0;              
+        this.button_repeat = 1;              
       }
-      this.button = key;
+      if (this.button != this.NONE) this.previous_button = this.button;
+      console.debug(this.button_repeat, this.previous_button);
     }
 
     this.getKey = function() {
@@ -292,9 +300,14 @@ function Input() {
       return this.button_repeat;
     }
 
+    this.clearAll = function() {
+      this.clear();
+      this.button_repeat = 0;
+      this.previous_button = this.NONE;
+    }
+
     this.clear = function() {
         this.button = this.NONE;
-        this.button_repeats = 0;
     }
 }
 
@@ -315,14 +328,21 @@ window.addEventListener("load", startGame, false);
 function updateInput(event) {
     var key = event.keyCode || event.which;
     if (68 == key) {
-      input[0].update(input.UP);
+      input[0].update(input[0].UP);
     } else if (70 == key) {
-      input[0].update(input.DOWN);
+      input[0].update(input[0].DOWN);
     }
     if (74 == key) {
-      input[1].update(input.UP);
+      input[1].update(input[1].UP);
     } else if (75 == key) {
-      input[1].update(input.DOWN);
+      input[1].update(input[1].DOWN);
     }
 }
 window.addEventListener("keydown", updateInput);
+
+function resetInput(event) {
+  var key = event.keyCode || event.which;
+  if (68 == key || 70 == key) input[0].clearAll();  
+  if (74 == key || 75 == key) input[1].clearAll();
+} 
+window.addEventListener("keyup", resetInput);
