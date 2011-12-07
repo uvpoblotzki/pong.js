@@ -314,14 +314,14 @@ window.addEventListener("load", startGame, false);
 
 function updateInput(event) {
     var key = event.keyCode || event.which;
-    if (KeyEvent.DOM_VK_D == key) {
+    if (68 == key) {
       input[0].update(input.UP);
-    } else if (KeyEvent.DOM_VK_F == key) {
+    } else if (70 == key) {
       input[0].update(input.DOWN);
     }
-    if (KeyEvent.DOM_VK_J == key) {
+    if (74 == key) {
       input[1].update(input.UP);
-    } else if (KeyEvent.DOM_VK_K == key) {
+    } else if (75 == key) {
       input[1].update(input.DOWN);
     }
 }
