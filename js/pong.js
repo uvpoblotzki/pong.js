@@ -133,17 +133,20 @@ function Ball(radius, position, velocity) {
 
 }
 
-function Paddel(width, height, position) {
+function Paddel(width, height, position, level) {
     this.width = width;
     this.height = height;
     this.position = position;
+    this.level = level;
 
-    this.tick = function(input, player) {
-        if (input.getKeyForPlayer(player) == input.UP) {
+    this.tick = function(input) {
+        if (input.getKey() == input.UP) {
             this.position.y += 100;
+            if (this.position.y > this.level.height - this.height) this.position.y = this.level.height - this.height;
             console.debug("Move paddle" + player + " up");
-        } else if (input.getKeyForPlayer(player) == input.DOWN) {
+        } else if (input.getKey() == input.DOWN) {
             this.position.y -= 100;
+            if (this.position.y < 0) this.position.y = 0;
             console.debug("Move paddel " + player + " down");
         }
     }
@@ -164,8 +167,8 @@ function Level(width, height) {
     this.height = height;
 
     this.ball = new Ball(10, new Vector(20, 20), new Vector(11, 13));
-    this.paddels = [new Paddel(20, 150, new Vector(50, this.height / 2 - 75)),
-    new Paddel(20, 150, new Vector(this.width - 70, this.height / 2 - 75))];
+    this.paddels = [new Paddel(20, 150, new Vector(50, this.height / 2 - 75), this),
+                    new Paddel(20, 150, new Vector(this.width - 70, this.height / 2 - 75), this)];
     this.scores = [0, 0];
 
     this.draw = function(context) {
@@ -199,8 +202,8 @@ function Level(width, height) {
     };
 
     this.tick = function(input) {
-        this.paddels[0].tick(input, input.PLAYER1);
-        this.paddels[1].tick(input, input.PLAYER2);
+        this.paddels[0].tick(input[0]);
+        this.paddels[1].tick(input[1]);
         this.ball.tick();
 
         // Hit walls?
@@ -256,7 +259,8 @@ function Pong(context, input) {
         this.level.draw(context);
 
         //reset events
-        this.input.clear();
+        this.input[0].clear();
+        this.input[1].clear();
 
         window.setTimeout("pong.tick()", 30);
     }
@@ -268,35 +272,35 @@ function Input() {
     this.DOWN = -1;
     this.NONE = 0;
 
-    this.PLAYER1 = 1;
-    this.PLAYER2 = 2;
+    this.button = this.NONE;
+    this.button_repeat = 0;
 
-    this.p1_button = this.NONE;
-    this.p2_button = this.NONE;
-
-    this.updatePlayer = function(player, key) {
-        if (player == this.PLAYER1) {
-            this.p1_button = key;
-        } else if (player == this.PLAYER2) {
-            this.p2_button = key;
-        }
+    this.update = function(key) {
+      if (this.button == key) {
+        this.button_repeat += 1;              
+      } else {
+        this.button_repeat = 0;              
+      }
+      this.button = key;
     }
 
-    this.getKeyForPlayer = function(player) {
-        if (player == this.PLAYER1) return this.p1_button;
-        if (player == this.PLAYER2) return this.p2_button;
-        return this.NONE;
+    this.getKey = function() {
+        return this.button;
+    }
+    
+    this.getRepeatsForKey = function() {
+      return this.button_repeat;
     }
 
     this.clear = function() {
-        this.p1_button = this.NONE;
-        this.p2_button = this.NONE;
+        this.button = this.NONE;
+        this.button_repeats = 0;
     }
 }
 
 // Globals
 var pong = null;
-var input = new Input();
+var input = [new Input(), new Input()];
 
 function startGame() {
     var canvas = document.getElementById("canvas");
@@ -310,15 +314,15 @@ window.addEventListener("load", startGame, false);
 
 function updateInput(event) {
     var key = event.keyCode || event.which;
-    if (KeyEvent.DOM_VK_J == key) {
-        input.updatePlayer(input.PLAYER2, input.UP);
-    } else if (KeyEvent.DOM_VK_K == key) {
-        input.updatePlayer(input.PLAYER2, input.DOWN);
-    }
     if (KeyEvent.DOM_VK_D == key) {
-        input.updatePlayer(input.PLAYER1, input.UP);
+      input[0].update(input.UP);
     } else if (KeyEvent.DOM_VK_F == key) {
-        input.updatePlayer(input.PLAYER1, input.DOWN);
+      input[0].update(input.DOWN);
+    }
+    if (KeyEvent.DOM_VK_J == key) {
+      input[1].update(input.UP);
+    } else if (KeyEvent.DOM_VK_K == key) {
+      input[1].update(input.DOWN);
     }
 }
 window.addEventListener("keydown", updateInput);
